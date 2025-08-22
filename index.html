@@ -336,7 +336,7 @@
                 const enteredPasscode = prompt(`Team ${state.teams[teamId].name}, please enter your passcode:`);
                 if (enteredPasscode === null) return;
 
-                if (enteredPasscode.toLowerCase() === teamPasscodes[teamId]) {
+                if (enteredPasscode === teamPasscodes[teamId]) {
                     placeBid(teamId);
                 } else {
                     showStatus("Incorrect passcode!", "error");
@@ -366,6 +366,7 @@
                 renderAuctionArena();
                 updateBidButtons();
                 sellPlayerBtn.disabled = false;
+                skipPlayerBtn.disabled = true; // Disable skip after first bid
                 startTimer();
             }
             
