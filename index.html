@@ -150,7 +150,7 @@
                         <button data-team="1" data-amount="500" class="btn bid-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+500</button>
                     </div>
                     <h3 class="font-semibold mb-2">Players:</h3>
-                    <ul id="team1Players" class="list-disc list-inside pl-2 space-y-1">
+                    <ul id="team1Players" class="space-y-2">
                         <!-- Players will be added here -->
                     </ul>
                 </div>
@@ -171,7 +171,7 @@
                         <button data-team="2" data-amount="500" class="btn bid-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+500</button>
                     </div>
                     <h3 class="font-semibold mb-2">Players:</h3>
-                    <ul id="team2Players" class="list-disc list-inside pl-2 space-y-1">
+                    <ul id="team2Players" class="space-y-2">
                         <!-- Players will be added here -->
                     </ul>
                 </div>
@@ -296,10 +296,20 @@
 
             function renderTeams() {
                 team1BudgetEl.textContent = state.teams[1].budget;
-                team1PlayersEl.innerHTML = state.teams[1].players.map(p => `<li>${p.name} <span class="text-gray-400">(${p.price})</span></li>`).join('');
+                team1PlayersEl.innerHTML = state.teams[1].players.map(p => `
+                    <li class="flex items-center gap-2 py-1">
+                        <img src="${p.image}" alt="${p.name}" class="w-8 h-8 rounded-full object-cover border-2 border-gray-600">
+                        <span>${p.name} <span class="text-gray-400">(${p.price})</span></span>
+                    </li>
+                `).join('');
                 
                 team2BudgetEl.textContent = state.teams[2].budget;
-                team2PlayersEl.innerHTML = state.teams[2].players.map(p => `<li>${p.name} <span class="text-gray-400">(${p.price})</span></li>`).join('');
+                team2PlayersEl.innerHTML = state.teams[2].players.map(p => `
+                    <li class="flex items-center gap-2 py-1">
+                        <img src="${p.image}" alt="${p.name}" class="w-8 h-8 rounded-full object-cover border-2 border-gray-600">
+                        <span>${p.name} <span class="text-gray-400">(${p.price})</span></span>
+                    </li>
+                `).join('');
             }
 
             function renderAuctionArena() {
@@ -409,7 +419,11 @@
                 const finalPrice = state.currentBid;
 
                 winningTeam.budget -= finalPrice;
-                winningTeam.players.push({ name: state.currentPlayer.name, price: finalPrice });
+                winningTeam.players.push({ 
+                    name: state.currentPlayer.name, 
+                    price: finalPrice, 
+                    image: state.currentPlayer.image 
+                });
 
                 showStatus(`${state.currentPlayer.name} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
                 
@@ -444,7 +458,11 @@
                     
                     const assignedTeam = state.teams[assignedTeamId];
                     assignedTeam.budget -= basePrice;
-                    assignedTeam.players.push({ name: skippedPlayer.name, price: basePrice });
+                    assignedTeam.players.push({ 
+                        name: skippedPlayer.name, 
+                        price: basePrice, 
+                        image: skippedPlayer.image 
+                    });
                     
                     message = `${skippedPlayer.name} was auto-assigned to Team ${assignedTeam.name} for ${basePrice}.`;
                     showStatus(message, "info", 5000);
