@@ -210,8 +210,7 @@
             ];
             const initialBudget = 5000;
             const basePrice = 100;
-            const auctionTime = 40; // Changed to 40 seconds
-            const teamPasscodes = { 1: "6544", 2: "5436" };
+            const auctionTime = 40;
             const auctioneerPasscode = "6329"; // Passcode for auctioneer controls
 
             let state = {};
@@ -336,17 +335,6 @@
                 sellPlayerBtn.disabled = true;
                 skipPlayerBtn.disabled = false;
                 startTimer();
-            }
-            
-            function handleBidAttempt(teamId, amount) {
-                const enteredPasscode = prompt(`Team ${state.teams[teamId].name}, please enter your passcode:`);
-                if (enteredPasscode === null) return;
-
-                if (enteredPasscode === teamPasscodes[teamId]) {
-                    placeBid(teamId, amount);
-                } else {
-                    showStatus("Incorrect passcode!", "error");
-                }
             }
 
             function placeBid(teamId, amount) {
@@ -528,21 +516,16 @@
             }
 
             // --- EVENT LISTENERS ---
-            nextPlayerBtn.addEventListener('click', () => {
-                if (checkAuctioneerPasscode()) {
-                    selectNextPlayer();
-                }
-            });
+            nextPlayerBtn.addEventListener('click', selectNextPlayer);
+            
             sellPlayerBtn.addEventListener('click', () => {
                  if (checkAuctioneerPasscode()) {
                     sellPlayer();
                 }
             });
-            skipPlayerBtn.addEventListener('click', () => {
-                 if (checkAuctioneerPasscode()) {
-                    skipPlayer(false);
-                }
-            });
+
+            skipPlayerBtn.addEventListener('click', () => skipPlayer(false));
+            
             resetBtn.addEventListener('click', () => {
                 if (checkAuctioneerPasscode()) {
                     if (confirm("Are you sure you want to reset the entire auction?")) {
@@ -557,7 +540,7 @@
                 btn.addEventListener('click', (e) => {
                     const teamId = e.target.dataset.team;
                     const amount = parseInt(e.target.dataset.amount, 10);
-                    handleBidAttempt(teamId, amount);
+                    placeBid(teamId, amount);
                 });
             });
 
