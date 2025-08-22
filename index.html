@@ -90,7 +90,7 @@
                 <div class="md:col-span-1 p-4 rounded-lg team-card flex flex-col items-center justify-center">
                     <img id="refereeImage" src="https://placehold.co/100x100/EFEFEF/333?text=Referee" alt="Referee" class="w-20 h-20 rounded-full mb-2 object-cover border-2 border-pink-400">
                     <h3 class="text-xl font-semibold text-gray-300">Auctioneer & Referee</h3>
-                    <p class="text-2xl font-bold text-pink-400 mt-1">🧑‍⚖️ Snehal</p>
+                    <p class="text-2xl font-bold text-pink-400 mt-1">�‍⚖️ Snehal</p>
                 </div>
                 <div class="md:col-span-2 p-4 rounded-lg team-card flex flex-col sm:flex-row items-center justify-around gap-4">
                     <button id="nextPlayerBtn" class="btn w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg">
@@ -295,21 +295,37 @@
             }
 
             function renderTeams() {
+                // Team 1
                 team1BudgetEl.textContent = state.teams[1].budget;
-                team1PlayersEl.innerHTML = state.teams[1].players.map(p => `
+                const captain1HTML = `
+                    <li class="flex items-center gap-2 py-1">
+                        <img src="https://raw.githubusercontent.com/sunilkumardhayal/HWM_Volleyball/main/akash.jpg" alt="Akash Yadav" class="w-8 h-8 rounded-full object-cover border-2 border-cyan-400">
+                        <span>Akash Yadav <span class="text-cyan-400 font-semibold">(Captain)</span></span>
+                    </li>
+                `;
+                const team1PlayersHTML = state.teams[1].players.map(p => `
                     <li class="flex items-center gap-2 py-1">
                         <img src="${p.image}" alt="${p.name}" class="w-8 h-8 rounded-full object-cover border-2 border-gray-600">
                         <span>${p.name} <span class="text-gray-400">(${p.price})</span></span>
                     </li>
                 `).join('');
-                
+                team1PlayersEl.innerHTML = captain1HTML + team1PlayersHTML;
+
+                // Team 2
                 team2BudgetEl.textContent = state.teams[2].budget;
-                team2PlayersEl.innerHTML = state.teams[2].players.map(p => `
+                 const captain2HTML = `
+                    <li class="flex items-center gap-2 py-1">
+                        <img src="https://raw.githubusercontent.com/sunilkumardhayal/HWM_Volleyball/main/sus.jpg" alt="Sushil Kumar Jaiswal" class="w-8 h-8 rounded-full object-cover border-2 border-orange-400">
+                        <span>Sushil Kumar Jaiswal <span class="text-orange-400 font-semibold">(Captain)</span></span>
+                    </li>
+                `;
+                const team2PlayersHTML = state.teams[2].players.map(p => `
                     <li class="flex items-center gap-2 py-1">
                         <img src="${p.image}" alt="${p.name}" class="w-8 h-8 rounded-full object-cover border-2 border-gray-600">
                         <span>${p.name} <span class="text-gray-400">(${p.price})</span></span>
                     </li>
                 `).join('');
+                team2PlayersEl.innerHTML = captain2HTML + team2PlayersHTML;
             }
 
             function renderAuctionArena() {
@@ -593,3 +609,4 @@
     </script>
 </body>
 </html>
+�
