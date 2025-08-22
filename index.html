@@ -39,8 +39,39 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        #timer {
-            transition: color 0.5s, transform 0.5s;
+        
+        /* Circular Timer Styles */
+        .timer-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 1rem auto;
+        }
+        .timer-svg {
+            transform: scaleX(-1) rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+        .timer-circle-bg {
+            fill: none;
+            stroke: #374151; /* Background circle color */
+            stroke-width: 8;
+        }
+        .timer-circle-progress {
+            fill: none;
+            stroke: #4f46e5; /* Progress circle color */
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear, stroke 0.5s;
+        }
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: 'Inter', sans-serif;
         }
     </style>
 </head>
@@ -79,7 +110,13 @@
                 <div id="currentPlayer" class="mb-4">
                     <!-- Current player details will be injected here -->
                 </div>
-                <div id="timer" class="text-5xl font-mono text-white my-3">20</div>
+                <div class="timer-container" id="timer-container">
+                    <svg class="timer-svg" viewBox="0 0 36 36">
+                        <path class="timer-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                        <path id="timer-progress" class="timer-circle-progress" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                    </svg>
+                    <span id="timer-text" class="timer-text">20</span>
+                </div>
                 <div class="text-4xl font-bold mb-4" id="currentBid">Base Price: 100</div>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <button id="sellPlayerBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
@@ -133,20 +170,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 1 Pool</h3>
-                        <div id="round1Players" class="player-pool-card p-4 rounded-lg space-y-2 min-h-[100px]">
-                            <!-- Player cards will be generated here -->
+                        <div id="round1Players" class="player-pool-card p-4 rounded-lg grid grid-cols-3 gap-2">
                         </div>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 2 Pool</h3>
-                        <div id="round2Players" class="player-pool-card p-4 rounded-lg space-y-2 min-h-[100px]">
-                            <!-- Player cards will be generated here -->
+                        <div id="round2Players" class="player-pool-card p-4 rounded-lg grid grid-cols-3 gap-2">
                         </div>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 3 Pool</h3>
-                        <div id="round3Players" class="player-pool-card p-4 rounded-lg space-y-2 min-h-[100px]">
-                            <!-- Player cards will be generated here -->
+                        <div id="round3Players" class="player-pool-card p-4 rounded-lg grid grid-cols-3 gap-2">
                         </div>
                     </div>
                 </div>
@@ -158,18 +192,21 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- STATE MANAGEMENT ---
             const initialPlayers = [
-                "Sunil Kumar", "Indra Mani Tripathi", "Kapil", "Bhanu", 
-                "Sumit", "Rajesh", "Pradeep", "Jitendra", "Indrajeet"
+                { name: "Sunil Kumar", image: "https://placehold.co/100x100/EFEFEF/333?text=SK" },
+                { name: "Indra M. Tripathi", image: "https://placehold.co/100x100/EFEFEF/333?text=IMT" },
+                { name: "Kapil", image: "https://placehold.co/100x100/EFEFEF/333?text=K" },
+                { name: "Bhanu", image: "https://placehold.co/100x100/EFEFEF/333?text=B" },
+                { name: "Sumit", image: "https://placehold.co/100x100/EFEFEF/333?text=S" },
+                { name: "Rajesh", image: "https://placehold.co/100x100/EFEFEF/333?text=R" },
+                { name: "Pradeep", image: "https://placehold.co/100x100/EFEFEF/333?text=P" },
+                { name: "Jitendra", image: "https://placehold.co/100x100/EFEFEF/333?text=J" },
+                { name: "Indrajeet", image: "https://placehold.co/100x100/EFEFEF/333?text=I" }
             ];
             const initialBudget = 5000;
             const bidIncrement = 100;
             const basePrice = 100;
             const auctionTime = 20;
-            // --- YOU CAN CHANGE THE PASSCODES HERE ---
-            const teamPasscodes = {
-                1: "akash", // Passcode for Team 1
-                2: "sushil"  // Passcode for Team 2
-            };
+            const teamPasscodes = { 1: "akash", 2: "sushil" };
 
             let state = {};
 
@@ -192,8 +229,10 @@
             const bidBtns = document.querySelectorAll('.bid-btn');
             const statusMessageEl = document.getElementById('statusMessage');
             const auctionArena = document.getElementById('auction-arena');
-            const timerEl = document.getElementById('timer');
+            const timerProgress = document.getElementById('timer-progress');
+            const timerText = document.getElementById('timer-text');
             const currentRoundDisplay = document.getElementById('currentRoundDisplay');
+            const CIRCLE_LENGTH = 100; // Corresponds to stroke-dasharray
 
             // --- CORE FUNCTIONS ---
 
@@ -201,7 +240,7 @@
                 stopTimer();
                 state = {
                     rounds: {
-                        1: [...initialPlayers],
+                        1: JSON.parse(JSON.stringify(initialPlayers)), // Deep copy
                         2: [],
                         3: []
                     },
@@ -234,8 +273,10 @@
                     roundPools[round].innerHTML = '';
                     state.rounds[round].forEach(player => {
                         const playerCard = document.createElement('div');
-                        playerCard.className = 'player-card p-2 rounded-lg text-center text-sm';
-                        playerCard.innerHTML = `<span class="font-semibold">${player}</span>`;
+                        playerCard.className = 'player-card p-2 rounded-lg text-center text-sm flex flex-col items-center';
+                        playerCard.innerHTML = `
+                            <img src="${player.image}" alt="${player.name}" class="w-12 h-12 rounded-full mb-1 object-cover border-2 border-gray-600">
+                            <span class="font-semibold text-xs">${player.name}</span>`;
                         roundPools[round].appendChild(playerCard);
                     });
                 }
@@ -253,9 +294,11 @@
                 if (state.currentPlayer) {
                     auctionArena.classList.remove('hidden');
                     currentRoundDisplay.textContent = state.currentRound;
-                    currentPlayerContainer.innerHTML = `<p class="text-4xl font-extrabold text-white">${state.currentPlayer}</p>`;
+                    currentPlayerContainer.innerHTML = `
+                        <img src="${state.currentPlayer.image}" alt="${state.currentPlayer.name}" class="w-24 h-24 rounded-full mx-auto mb-2 object-cover border-4 border-indigo-500">
+                        <p class="text-4xl font-extrabold text-white">${state.currentPlayer.name}</p>`;
                     currentBidEl.textContent = state.currentBid === 0 ? `Base Price: ${basePrice}` : `Current Bid: ${state.currentBid}`;
-                    timerEl.textContent = auctionTime;
+                    updateTimerDisplay(auctionTime);
                 } else {
                     auctionArena.classList.add('hidden');
                 }
@@ -281,7 +324,7 @@
                 state.highestBidder = null;
                 state.auctionInProgress = true;
                 
-                showStatus(`${state.currentPlayer} is now up for auction!`, "normal");
+                showStatus(`${state.currentPlayer.name} is now up for auction!`, "normal");
                 
                 renderAll();
                 sellPlayerBtn.disabled = true;
@@ -291,7 +334,7 @@
             
             function handleBidAttempt(teamId) {
                 const enteredPasscode = prompt(`Team ${state.teams[teamId].name}, please enter your passcode:`);
-                if (enteredPasscode === null) return; // User cancelled prompt
+                if (enteredPasscode === null) return;
 
                 if (enteredPasscode.toLowerCase() === teamPasscodes[teamId]) {
                     placeBid(teamId);
@@ -357,9 +400,9 @@
                 const finalPrice = state.currentBid;
 
                 winningTeam.budget -= finalPrice;
-                winningTeam.players.push({ name: state.currentPlayer, price: finalPrice });
+                winningTeam.players.push({ name: state.currentPlayer.name, price: finalPrice });
 
-                showStatus(`${state.currentPlayer} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
+                showStatus(`${state.currentPlayer.name} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
                 
                 resetAuctionRound();
             }
@@ -372,11 +415,11 @@
                 if (state.currentRound < 3) {
                     state.rounds[state.currentRound + 1].push(skippedPlayer);
                     message = isAutomatic
-                        ? `${skippedPlayer} is unsold and moves to Round ${state.currentRound + 1}.`
-                        : `${skippedPlayer} was skipped and moves to Round ${state.currentRound + 1}.`;
+                        ? `${skippedPlayer.name} is unsold and moves to Round ${state.currentRound + 1}.`
+                        : `${skippedPlayer.name} was skipped and moves to Round ${state.currentRound + 1}.`;
                 } else {
                     state.unsoldPlayers.push(skippedPlayer);
-                     message = `${skippedPlayer} is permanently unsold.`;
+                     message = `${skippedPlayer.name} is permanently unsold.`;
                 }
                 
                 showStatus(message, "info", 5000);
@@ -406,21 +449,28 @@
                 let winnerMessage = `Auction Over! Team 1 spent ${team1Spent}. Team 2 spent ${team2Spent}.`;
                 showStatus(winnerMessage, "info", 10000);
             }
+            
+            function updateTimerDisplay(time) {
+                const timeFraction = time / auctionTime;
+                const offset = CIRCLE_LENGTH - timeFraction * CIRCLE_LENGTH;
+                timerProgress.style.strokeDashoffset = offset;
+                timerText.textContent = time;
+
+                if (time <= 5) {
+                    timerProgress.style.stroke = "#ef4444"; // Red
+                } else {
+                    timerProgress.style.stroke = "#4f46e5"; // Indigo
+                }
+            }
 
             function startTimer() {
                 stopTimer(); 
                 state.timeLeft = auctionTime;
-                timerEl.textContent = state.timeLeft;
-                timerEl.classList.remove('text-red-500');
-                timerEl.classList.add('text-white');
+                updateTimerDisplay(state.timeLeft);
 
                 state.timerId = setInterval(() => {
                     state.timeLeft--;
-                    timerEl.textContent = state.timeLeft;
-                    if (state.timeLeft <= 10) {
-                        timerEl.classList.remove('text-white');
-                        timerEl.classList.add('text-red-500');
-                    }
+                    updateTimerDisplay(state.timeLeft);
                     if (state.timeLeft <= 0) {
                         if (state.highestBidder) {
                             sellPlayer();
