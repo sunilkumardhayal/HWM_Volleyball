@@ -139,8 +139,12 @@
                     <div class="mb-4">
                         <p class="font-semibold">Budget: <span id="team1Budget" class="text-yellow-400">5000</span></p>
                     </div>
-                    <div class="mb-4">
-                        <button data-team="1" class="btn bid-btn w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded" disabled>Bid +100</button>
+                    <div class="mb-4 flex flex-wrap gap-2 justify-center">
+                        <button data-team="1" data-amount="50" class="btn bid-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+50</button>
+                        <button data-team="1" data-amount="100" class="btn bid-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+100</button>
+                        <button data-team="1" data-amount="200" class="btn bid-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+200</button>
+                        <button data-team="1" data-amount="250" class="btn bid-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+250</button>
+                        <button data-team="1" data-amount="500" class="btn bid-btn bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+500</button>
                     </div>
                     <h3 class="font-semibold mb-2">Players:</h3>
                     <ul id="team1Players" class="list-disc list-inside pl-2 space-y-1">
@@ -154,8 +158,12 @@
                     <div class="mb-4">
                         <p class="font-semibold">Budget: <span id="team2Budget" class="text-yellow-400">5000</span></p>
                     </div>
-                    <div class="mb-4">
-                        <button data-team="2" class="btn bid-btn w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded" disabled>Bid +100</button>
+                    <div class="mb-4 flex flex-wrap gap-2 justify-center">
+                        <button data-team="2" data-amount="50" class="btn bid-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+50</button>
+                        <button data-team="2" data-amount="100" class="btn bid-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+100</button>
+                        <button data-team="2" data-amount="200" class="btn bid-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+200</button>
+                        <button data-team="2" data-amount="250" class="btn bid-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+250</button>
+                        <button data-team="2" data-amount="500" class="btn bid-btn bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded text-sm" disabled>+500</button>
                     </div>
                     <h3 class="font-semibold mb-2">Players:</h3>
                     <ul id="team2Players" class="list-disc list-inside pl-2 space-y-1">
@@ -203,7 +211,6 @@
                 { name: "Indrajeet", image: "https://placehold.co/100x100/EFEFEF/333?text=I" }
             ];
             const initialBudget = 5000;
-            const bidIncrement = 100;
             const basePrice = 100;
             const auctionTime = 20;
             const teamPasscodes = { 1: "6544", 2: "5436" };
@@ -332,20 +339,23 @@
                 startTimer();
             }
             
-            function handleBidAttempt(teamId) {
+            function handleBidAttempt(teamId, amount) {
                 const enteredPasscode = prompt(`Team ${state.teams[teamId].name}, please enter your passcode:`);
                 if (enteredPasscode === null) return;
 
                 if (enteredPasscode === teamPasscodes[teamId]) {
-                    placeBid(teamId);
+                    placeBid(teamId, amount);
                 } else {
                     showStatus("Incorrect passcode!", "error");
                 }
             }
 
-            function placeBid(teamId) {
+            function placeBid(teamId, amount) {
                 const team = state.teams[teamId];
-                const newBid = (state.currentBid === 0 ? basePrice : state.currentBid) + (state.currentBid > 0 ? bidIncrement : 0);
+                
+                const newBid = state.currentBid === 0
+                    ? Math.max(basePrice, amount)
+                    : state.currentBid + amount;
 
                 if (team.budget < newBid) {
                     showStatus(`${team.name} does not have enough budget!`, "error");
@@ -378,10 +388,14 @@
 
                 bidBtns.forEach(btn => {
                     const teamId = btn.dataset.team;
+                    const amount = parseInt(btn.dataset.amount, 10);
                     const team = state.teams[teamId];
-                    const nextBid = (state.currentBid === 0 ? basePrice : state.currentBid) + (state.currentBid > 0 ? bidIncrement : 0);
                     
-                    if ((state.biddingTurn != teamId && state.highestBidder !== null) || team.budget < nextBid) {
+                    const newBid = state.currentBid === 0
+                        ? Math.max(basePrice, amount)
+                        : state.currentBid + amount;
+                    
+                    if ((state.biddingTurn != teamId && state.highestBidder !== null) || team.budget < newBid) {
                         btn.disabled = true;
                     } else {
                         btn.disabled = false;
@@ -517,7 +531,9 @@
 
             bidBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    handleBidAttempt(e.target.dataset.team);
+                    const teamId = e.target.dataset.team;
+                    const amount = parseInt(e.target.dataset.amount, 10);
+                    handleBidAttempt(teamId, amount);
                 });
             });
 
