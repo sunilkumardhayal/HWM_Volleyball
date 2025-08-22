@@ -165,6 +165,11 @@
             const bidIncrement = 100;
             const basePrice = 100;
             const auctionTime = 20;
+            // --- YOU CAN CHANGE THE PASSCODES HERE ---
+            const teamPasscodes = {
+                1: "akash", // Passcode for Team 1
+                2: "sushil"  // Passcode for Team 2
+            };
 
             let state = {};
 
@@ -257,7 +262,6 @@
             }
 
             function selectNextPlayer() {
-                // Advance round if current one is empty
                 while (state.rounds[state.currentRound].length === 0 && state.currentRound < 3) {
                     state.currentRound++;
                     showStatus(`Starting Round ${state.currentRound}!`, "info");
@@ -283,6 +287,17 @@
                 sellPlayerBtn.disabled = true;
                 skipPlayerBtn.disabled = false;
                 startTimer();
+            }
+            
+            function handleBidAttempt(teamId) {
+                const enteredPasscode = prompt(`Team ${state.teams[teamId].name}, please enter your passcode:`);
+                if (enteredPasscode === null) return; // User cancelled prompt
+
+                if (enteredPasscode.toLowerCase() === teamPasscodes[teamId]) {
+                    placeBid(teamId);
+                } else {
+                    showStatus("Incorrect passcode!", "error");
+                }
             }
 
             function placeBid(teamId) {
@@ -451,7 +466,7 @@
 
             bidBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    placeBid(e.target.dataset.team);
+                    handleBidAttempt(e.target.dataset.team);
                 });
             });
 
