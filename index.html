@@ -254,8 +254,7 @@
             ];
             const initialBudget = 5000;
             const basePrice = 100;
-            const auctionTime = 25;
-            const auctioneerPasscode = "6329"; // Passcode for auctioneer controls
+            const auctionTime = 10;
 
             let state = {};
 
@@ -408,6 +407,11 @@
                 }
             }
 
+            function announce(text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                speechSynthesis.speak(utterance);
+            }
+
             function selectNextPlayer() {
                 while (state.rounds[state.currentRound].length === 0 && state.currentRound < 3) {
                     state.currentRound++;
@@ -429,6 +433,7 @@
                 state.auctionInProgress = true;
                 
                 showStatus(`${state.currentPlayer.name} is now up for auction!`, "normal");
+                announce(`Now auctioning ${state.currentPlayer.name}`);
                 
                 renderAll();
                 sellPlayerBtn.disabled = true;
@@ -509,7 +514,9 @@
                     image: state.currentPlayer.image 
                 });
 
-                showStatus(`${state.currentPlayer.name} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
+                const soldMessage = `${state.currentPlayer.name} sold to Team ${winningTeam.name} for ${finalPrice}!`;
+                showStatus(soldMessage, "success", 5000);
+                announce(soldMessage);
                 
                 resetAuctionRound();
             }
@@ -548,6 +555,7 @@
                     
                     message = `${skippedPlayer.name} was auto-assigned to Team ${assignedTeam.name} for ${basePrice}.`;
                     showStatus(message, "info", 5000);
+                    announce(message);
                 }
                 
                 resetAuctionRound();
@@ -586,7 +594,7 @@
                 timerProgress.style.strokeDashoffset = offset;
                 timerText.textContent = time;
 
-                if (time <= 10) {
+                if (time <= 8) {
                     if (soundsReady && time > 0) tickSound.triggerAttackRelease("C2", "8n");
                     timerProgress.style.stroke = "#ef4444"; // Red
                 } else {
@@ -645,17 +653,6 @@
                 }, duration);
             }
             
-            function checkAuctioneerPasscode() {
-                const enteredPasscode = prompt("Auctioneer, please enter your passcode:");
-                if (enteredPasscode === null) return false;
-                if (enteredPasscode === auctioneerPasscode) {
-                    return true;
-                } else {
-                    showStatus("Incorrect auctioneer passcode!", "error");
-                    return false;
-                }
-            }
-            
             function launchConfetti() {
                 const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
                 for (let i = 0; i < 100; i++) {
@@ -671,22 +668,13 @@
 
             // --- EVENT LISTENERS ---
             nextPlayerBtn.addEventListener('click', selectNextPlayer);
-            
-            sellPlayerBtn.addEventListener('click', () => {
-                 if (checkAuctioneerPasscode()) {
-                    sellPlayer();
-                }
-            });
-
+            sellPlayerBtn.addEventListener('click', sellPlayer);
             skipPlayerBtn.addEventListener('click', () => skipPlayer(false));
-            
             resetBtn.addEventListener('click', () => {
-                if (checkAuctioneerPasscode()) {
-                    if (confirm("Are you sure you want to reset the entire auction?")) {
-                        initializeState();
-                        nextPlayerBtn.disabled = false;
-                        showStatus("Auction has been reset.", "info");
-                    }
+                if (confirm("Are you sure you want to reset the entire auction?")) {
+                    initializeState();
+                    nextPlayerBtn.disabled = false;
+                    showStatus("Auction has been reset.", "info");
                 }
             });
 
@@ -699,23 +687,19 @@
             });
 
             confirmSaleBtn.addEventListener('click', () => {
-                if (checkAuctioneerPasscode()) {
-                    if (state.highestBidder) {
-                        sellPlayer();
-                    } else {
-                        skipPlayer(true);
-                    }
+                if (state.highestBidder) {
+                    sellPlayer();
+                } else {
+                    skipPlayer(true);
                 }
             });
 
             restartTimerBtn.addEventListener('click', () => {
-                if (checkAuctioneerPasscode()) {
-                    auctionControls.classList.remove('hidden');
-                    auctionControls.classList.add('flex');
-                    refereeControls.classList.add('hidden');
-                    updateBidButtons();
-                    startTimer();
-                }
+                auctionControls.classList.remove('hidden');
+                auctionControls.classList.add('flex');
+                refereeControls.classList.add('hidden');
+                updateBidButtons();
+                startTimer();
             });
 
             // --- INITIALIZE THE APP ---
