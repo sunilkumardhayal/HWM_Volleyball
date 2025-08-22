@@ -12,7 +12,7 @@
             background-color: #111827; /* Dark background */
             color: #f3f4f6;
         }
-        .team-card, .player-card, .auction-card {
+        .team-card, .player-card, .auction-card, .player-pool-card {
             background-color: #1f2937; /* Slightly lighter card background */
             border: 1px solid #374151;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -31,14 +31,6 @@
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-        .player-name-tag {
-            background: linear-gradient(to right, #4f46e5, #ec4899);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 600;
         }
         .status-message {
             animation: fadeIn 0.5s ease-in-out;
@@ -80,11 +72,14 @@
 
             <!-- Auction Arena -->
             <div id="auction-arena" class="auction-card rounded-lg p-6 mb-8 text-center hidden">
-                <h2 class="text-2xl font-bold mb-4 text-yellow-300">🔥 ON THE BLOCK 🔥</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-yellow-300">🔥 ON THE BLOCK 🔥</h2>
+                    <h3 class="text-xl font-semibold">Round: <span id="currentRoundDisplay">1</span></h3>
+                </div>
                 <div id="currentPlayer" class="mb-4">
                     <!-- Current player details will be injected here -->
                 </div>
-                <div id="timer" class="text-5xl font-mono text-white my-3">30</div>
+                <div id="timer" class="text-5xl font-mono text-white my-3">20</div>
                 <div class="text-4xl font-bold mb-4" id="currentBid">Base Price: 100</div>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <button id="sellPlayerBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
@@ -134,9 +129,26 @@
 
             <!-- Available Players Section -->
             <div>
-                <h2 class="text-2xl font-bold text-center mb-4">Available Players</h2>
-                <div id="availablePlayers" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <!-- Player cards will be generated here -->
+                <h2 class="text-2xl font-bold text-center mb-4">Player Pools</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 1 Pool</h3>
+                        <div id="round1Players" class="player-pool-card p-4 rounded-lg space-y-2 min-h-[100px]">
+                            <!-- Player cards will be generated here -->
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 2 Pool</h3>
+                        <div id="round2Players" class="player-pool-card p-4 rounded-lg space-y-2 min-h-[100px]">
+                            <!-- Player cards will be generated here -->
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 3 Pool</h3>
+                        <div id="round3Players" class="player-pool-card p-4 rounded-lg space-y-2 min-h-[100px]">
+                            <!-- Player cards will be generated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -152,12 +164,16 @@
             const initialBudget = 5000;
             const bidIncrement = 100;
             const basePrice = 100;
-            const auctionTime = 30;
+            const auctionTime = 20;
 
             let state = {};
 
             // --- DOM ELEMENTS ---
-            const availablePlayersContainer = document.getElementById('availablePlayers');
+            const roundPools = {
+                1: document.getElementById('round1Players'),
+                2: document.getElementById('round2Players'),
+                3: document.getElementById('round3Players')
+            };
             const team1BudgetEl = document.getElementById('team1Budget');
             const team2BudgetEl = document.getElementById('team2Budget');
             const team1PlayersEl = document.getElementById('team1Players');
@@ -172,13 +188,20 @@
             const statusMessageEl = document.getElementById('statusMessage');
             const auctionArena = document.getElementById('auction-arena');
             const timerEl = document.getElementById('timer');
+            const currentRoundDisplay = document.getElementById('currentRoundDisplay');
 
             // --- CORE FUNCTIONS ---
 
             function initializeState() {
                 stopTimer();
                 state = {
-                    availablePlayers: [...initialPlayers],
+                    rounds: {
+                        1: [...initialPlayers],
+                        2: [],
+                        3: []
+                    },
+                    unsoldPlayers: [],
+                    currentRound: 1,
                     teams: {
                         1: { name: "Akash Yadav", budget: initialBudget, players: [] },
                         2: { name: "Sushil Kumar Jaiswal", budget: initialBudget, players: [] }
@@ -195,20 +218,22 @@
             }
 
             function renderAll() {
-                renderAvailablePlayers();
+                renderPlayerPools();
                 renderTeams();
                 renderAuctionArena();
                 updateBidButtons();
             }
 
-            function renderAvailablePlayers() {
-                availablePlayersContainer.innerHTML = '';
-                state.availablePlayers.forEach(player => {
-                    const playerCard = document.createElement('div');
-                    playerCard.className = 'player-card p-4 rounded-lg text-center';
-                    playerCard.innerHTML = `<span class="font-semibold">${player}</span>`;
-                    availablePlayersContainer.appendChild(playerCard);
-                });
+            function renderPlayerPools() {
+                for (const round in roundPools) {
+                    roundPools[round].innerHTML = '';
+                    state.rounds[round].forEach(player => {
+                        const playerCard = document.createElement('div');
+                        playerCard.className = 'player-card p-2 rounded-lg text-center text-sm';
+                        playerCard.innerHTML = `<span class="font-semibold">${player}</span>`;
+                        roundPools[round].appendChild(playerCard);
+                    });
+                }
             }
 
             function renderTeams() {
@@ -222,22 +247,31 @@
             function renderAuctionArena() {
                 if (state.currentPlayer) {
                     auctionArena.classList.remove('hidden');
+                    currentRoundDisplay.textContent = state.currentRound;
                     currentPlayerContainer.innerHTML = `<p class="text-4xl font-extrabold text-white">${state.currentPlayer}</p>`;
                     currentBidEl.textContent = state.currentBid === 0 ? `Base Price: ${basePrice}` : `Current Bid: ${state.currentBid}`;
+                    timerEl.textContent = auctionTime;
                 } else {
                     auctionArena.classList.add('hidden');
                 }
             }
 
             function selectNextPlayer() {
-                if (state.availablePlayers.length === 0) {
+                // Advance round if current one is empty
+                while (state.rounds[state.currentRound].length === 0 && state.currentRound < 3) {
+                    state.currentRound++;
+                    showStatus(`Starting Round ${state.currentRound}!`, "info");
+                }
+
+                const currentPool = state.rounds[state.currentRound];
+                if (currentPool.length === 0) {
                     showStatus("All players have been auctioned!", "info", 5000);
                     endAuction();
                     return;
                 }
 
-                const randomIndex = Math.floor(Math.random() * state.availablePlayers.length);
-                state.currentPlayer = state.availablePlayers.splice(randomIndex, 1)[0];
+                const randomIndex = Math.floor(Math.random() * currentPool.length);
+                state.currentPlayer = currentPool.splice(randomIndex, 1)[0];
                 
                 state.currentBid = 0;
                 state.highestBidder = null;
@@ -274,7 +308,7 @@
                 renderAuctionArena();
                 updateBidButtons();
                 sellPlayerBtn.disabled = false;
-                startTimer(); // Reset timer on each bid
+                startTimer();
             }
             
             function updateBidButtons() {
@@ -317,9 +351,19 @@
 
             function skipPlayer(isAutomatic = false) {
                 stopTimer();
-                const message = isAutomatic
-                    ? `${state.currentPlayer} is unsold as time ran out with no bids.`
-                    : `${state.currentPlayer} was skipped.`;
+                const skippedPlayer = state.currentPlayer;
+                let message;
+
+                if (state.currentRound < 3) {
+                    state.rounds[state.currentRound + 1].push(skippedPlayer);
+                    message = isAutomatic
+                        ? `${skippedPlayer} is unsold and moves to Round ${state.currentRound + 1}.`
+                        : `${skippedPlayer} was skipped and moves to Round ${state.currentRound + 1}.`;
+                } else {
+                    state.unsoldPlayers.push(skippedPlayer);
+                     message = `${skippedPlayer} is permanently unsold.`;
+                }
+                
                 showStatus(message, "info", 5000);
                 resetAuctionRound();
             }
