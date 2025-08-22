@@ -175,7 +175,7 @@
                 <div id="team1" class="team-card p-6 rounded-lg">
                     <div class="flex items-center gap-4 mb-4">
                         <img id="captain1Image" src="https://raw.githubusercontent.com/sunilkumardhayal/HWM_Volleyball/main/akash.jpg" alt="Captain 1" class="w-16 h-16 rounded-full object-cover border-2 border-cyan-400">
-                        <h2 class="text-2xl font-bold text-cyan-400">Team 1: Akash Yadav</h2>
+                        <h2 class="text-2xl font-bold text-cyan-400">Team: SKY</h2>
                     </div>
                     <div class="mb-4">
                         <p class="font-semibold">Budget: <span id="team1Budget" class="text-yellow-400">5000</span></p>
@@ -196,7 +196,7 @@
                 <div id="team2" class="team-card p-6 rounded-lg">
                     <div class="flex items-center gap-4 mb-4">
                         <img id="captain2Image" src="https://raw.githubusercontent.com/sunilkumardhayal/HWM_Volleyball/main/sus.jpg" alt="Captain 2" class="w-16 h-16 rounded-full object-cover border-2 border-orange-400">
-                        <h2 class="text-2xl font-bold text-orange-400">Team 2: Sushil Kumar Jaiswal</h2>
+                        <h2 class="text-2xl font-bold text-orange-400">Team: Magnet</h2>
                     </div>
                     <div class="mb-4">
                         <p class="font-semibold">Budget: <span id="team2Budget" class="text-yellow-400">5000</span></p>
@@ -316,8 +316,8 @@
                     unsoldPlayers: [],
                     currentRound: 1,
                     teams: {
-                        1: { name: "Akash Yadav", budget: initialBudget, players: [] },
-                        2: { name: "Sushil Kumar Jaiswal", budget: initialBudget, players: [] }
+                        1: { name: "SKY", budget: initialBudget, players: [] },
+                        2: { name: "Magnet", budget: initialBudget, players: [] }
                     },
                     currentPlayer: null,
                     currentBid: 0,
@@ -445,7 +445,7 @@
                     : state.currentBid + amount;
 
                 if (team.budget < newBid) {
-                    showStatus(`${team.name} does not have enough budget!`, "error");
+                    showStatus(`Team ${team.name} does not have enough budget!`, "error");
                     return;
                 }
                 
