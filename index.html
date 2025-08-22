@@ -257,6 +257,7 @@
             const auctionTime = 10;
 
             let state = {};
+            let speechVoice = null;
 
             // --- DOM ELEMENTS ---
             const roundPools = {
@@ -300,6 +301,14 @@
                     soundsReady = true;
                 }
             }, { once: true });
+
+            // --- SPEECH SYNTHESIS SETUP ---
+            function loadVoices() {
+                const voices = speechSynthesis.getVoices();
+                speechVoice = voices.find(v => v.name.includes('Female') && v.lang.includes('en')) || voices[0];
+            }
+            speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
 
 
             // --- CORE FUNCTIONS ---
@@ -408,7 +417,13 @@
             }
 
             function announce(text) {
+                speechSynthesis.cancel(); // Cancel any previous speech
                 const utterance = new SpeechSynthesisUtterance(text);
+                if (speechVoice) {
+                    utterance.voice = speechVoice;
+                }
+                utterance.rate = 0.8; // Slower speech
+                utterance.pitch = 1.1;
                 speechSynthesis.speak(utterance);
             }
 
@@ -432,8 +447,9 @@
                 state.highestBidder = null;
                 state.auctionInProgress = true;
                 
+                const announcementText = `The next player in the auction is... ${state.currentPlayer.name.replace(/ /g, '... ')}`;
                 showStatus(`${state.currentPlayer.name} is now up for auction!`, "normal");
-                announce(`Now auctioning ${state.currentPlayer.name}`);
+                announce(announcementText);
                 
                 renderAll();
                 sellPlayerBtn.disabled = true;
@@ -514,8 +530,8 @@
                     image: state.currentPlayer.image 
                 });
 
-                const soldMessage = `${state.currentPlayer.name} sold to Team ${winningTeam.name} for ${finalPrice}!`;
-                showStatus(soldMessage, "success", 5000);
+                const soldMessage = `${state.currentPlayer.name}... sold to Team ${winningTeam.name}... for ${finalPrice}!`;
+                showStatus(`${state.currentPlayer.name} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
                 announce(soldMessage);
                 
                 resetAuctionRound();
@@ -553,8 +569,8 @@
                         image: skippedPlayer.image 
                     });
                     
-                    message = `${skippedPlayer.name} was auto-assigned to Team ${assignedTeam.name} for ${basePrice}.`;
-                    showStatus(message, "info", 5000);
+                    message = `${skippedPlayer.name}... was auto-assigned to Team ${assignedTeam.name}... for ${basePrice}.`;
+                    showStatus(`${skippedPlayer.name} was auto-assigned to Team ${assignedTeam.name} for ${basePrice}.`, "info", 5000);
                     announce(message);
                 }
                 
