@@ -47,6 +47,9 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        #timer {
+            transition: color 0.5s, transform 0.5s;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-6 md:p-8">
@@ -81,10 +84,14 @@
                 <div id="currentPlayer" class="mb-4">
                     <!-- Current player details will be injected here -->
                 </div>
+                <div id="timer" class="text-5xl font-mono text-white my-3">30</div>
                 <div class="text-4xl font-bold mb-4" id="currentBid">Base Price: 100</div>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <button id="sellPlayerBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
                         SOLD!
+                    </button>
+                    <button id="skipPlayerBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
+                        Skip Player
                     </button>
                 </div>
             </div>
@@ -145,6 +152,7 @@
             const initialBudget = 5000;
             const bidIncrement = 100;
             const basePrice = 100;
+            const auctionTime = 30;
 
             let state = {};
 
@@ -158,17 +166,17 @@
             const currentBidEl = document.getElementById('currentBid');
             const nextPlayerBtn = document.getElementById('nextPlayerBtn');
             const sellPlayerBtn = document.getElementById('sellPlayerBtn');
+            const skipPlayerBtn = document.getElementById('skipPlayerBtn');
             const resetBtn = document.getElementById('resetBtn');
             const bidBtns = document.querySelectorAll('.bid-btn');
             const statusMessageEl = document.getElementById('statusMessage');
             const auctionArena = document.getElementById('auction-arena');
+            const timerEl = document.getElementById('timer');
 
             // --- CORE FUNCTIONS ---
 
-            /**
-             * Initializes or resets the auction state
-             */
             function initializeState() {
+                stopTimer();
                 state = {
                     availablePlayers: [...initialPlayers],
                     teams: {
@@ -179,14 +187,13 @@
                     currentBid: 0,
                     highestBidder: null,
                     auctionInProgress: false,
-                    biddingTurn: Math.ceil(Math.random() * 2) // Randomly start with team 1 or 2
+                    biddingTurn: Math.ceil(Math.random() * 2),
+                    timerId: null,
+                    timeLeft: auctionTime
                 };
                 renderAll();
             }
 
-            /**
-             * Renders all components of the UI based on the current state
-             */
             function renderAll() {
                 renderAvailablePlayers();
                 renderTeams();
@@ -194,9 +201,6 @@
                 updateBidButtons();
             }
 
-            /**
-             * Renders the list of available players
-             */
             function renderAvailablePlayers() {
                 availablePlayersContainer.innerHTML = '';
                 state.availablePlayers.forEach(player => {
@@ -207,22 +211,14 @@
                 });
             }
 
-            /**
-             * Renders the team information (budget and player list)
-             */
             function renderTeams() {
-                // Team 1
                 team1BudgetEl.textContent = state.teams[1].budget;
                 team1PlayersEl.innerHTML = state.teams[1].players.map(p => `<li>${p.name} <span class="text-gray-400">(${p.price})</span></li>`).join('');
                 
-                // Team 2
                 team2BudgetEl.textContent = state.teams[2].budget;
                 team2PlayersEl.innerHTML = state.teams[2].players.map(p => `<li>${p.name} <span class="text-gray-400">(${p.price})</span></li>`).join('');
             }
 
-            /**
-             * Renders the central auction block for the current player
-             */
             function renderAuctionArena() {
                 if (state.currentPlayer) {
                     auctionArena.classList.remove('hidden');
@@ -233,9 +229,6 @@
                 }
             }
 
-            /**
-             * Selects the next player for auction
-             */
             function selectNextPlayer() {
                 if (state.availablePlayers.length === 0) {
                     showStatus("All players have been auctioned!", "info", 5000);
@@ -243,9 +236,10 @@
                     return;
                 }
 
-                // Move player from available to current
-                state.currentPlayer = state.availablePlayers.shift();
-                state.currentBid = 0; // Reset bid for new player
+                const randomIndex = Math.floor(Math.random() * state.availablePlayers.length);
+                state.currentPlayer = state.availablePlayers.splice(randomIndex, 1)[0];
+                
+                state.currentBid = 0;
                 state.highestBidder = null;
                 state.auctionInProgress = true;
                 
@@ -253,12 +247,10 @@
                 
                 renderAll();
                 sellPlayerBtn.disabled = true;
+                skipPlayerBtn.disabled = false;
+                startTimer();
             }
 
-            /**
-             * Handles the bidding logic
-             * @param {string} teamId - The ID of the team that is bidding ('1' or '2')
-             */
             function placeBid(teamId) {
                 const team = state.teams[teamId];
                 const newBid = (state.currentBid === 0 ? basePrice : state.currentBid) + (state.currentBid > 0 ? bidIncrement : 0);
@@ -275,18 +267,16 @@
 
                 state.currentBid = newBid;
                 state.highestBidder = teamId;
-                state.biddingTurn = teamId == 1 ? 2 : 1; // Switch turns
+                state.biddingTurn = teamId == 1 ? 2 : 1;
 
                 showStatus(`Team ${team.name} bids ${state.currentBid}!`, "normal");
                 
                 renderAuctionArena();
                 updateBidButtons();
                 sellPlayerBtn.disabled = false;
+                startTimer(); // Reset timer on each bid
             }
             
-            /**
-             * Updates the state and appearance of bidding buttons
-             */
             function updateBidButtons() {
                 if (!state.auctionInProgress) {
                     bidBtns.forEach(btn => btn.disabled = true);
@@ -298,7 +288,6 @@
                     const team = state.teams[teamId];
                     const nextBid = (state.currentBid === 0 ? basePrice : state.currentBid) + (state.currentBid > 0 ? bidIncrement : 0);
                     
-                    // Disable if it's not their turn (and a bid has been placed) or if they can't afford it
                     if ((state.biddingTurn != teamId && state.highestBidder !== null) || team.budget < nextBid) {
                         btn.disabled = true;
                     } else {
@@ -306,11 +295,9 @@
                     }
                 });
             }
-
-            /**
-             * Sells the current player to the highest bidder
-             */
+            
             function sellPlayer() {
+                stopTimer();
                 if (!state.highestBidder) {
                     showStatus("No bids were placed!", "error");
                     return;
@@ -320,59 +307,84 @@
                 const winningTeam = state.teams[winningTeamId];
                 const finalPrice = state.currentBid;
 
-                // Update winning team's state
                 winningTeam.budget -= finalPrice;
                 winningTeam.players.push({ name: state.currentPlayer, price: finalPrice });
 
                 showStatus(`${state.currentPlayer} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
                 
-                // Reset auction state for next player
+                resetAuctionRound();
+            }
+
+            function skipPlayer(isAutomatic = false) {
+                stopTimer();
+                const message = isAutomatic
+                    ? `${state.currentPlayer} is unsold as time ran out with no bids.`
+                    : `${state.currentPlayer} was skipped.`;
+                showStatus(message, "info", 5000);
+                resetAuctionRound();
+            }
+
+            function resetAuctionRound() {
                 state.currentPlayer = null;
                 state.currentBid = 0;
                 state.highestBidder = null;
                 state.auctionInProgress = false;
-                
+                skipPlayerBtn.disabled = true;
                 renderAll();
             }
             
-            /**
-             * Ends the auction when all players are sold
-             */
             function endAuction() {
+                stopTimer();
                 state.auctionInProgress = false;
                 updateBidButtons();
                 nextPlayerBtn.disabled = true;
                 sellPlayerBtn.disabled = true;
+                skipPlayerBtn.disabled = true;
                 
                 const team1Spent = initialBudget - state.teams[1].budget;
                 const team2Spent = initialBudget - state.teams[2].budget;
 
                 let winnerMessage = `Auction Over! Team 1 spent ${team1Spent}. Team 2 spent ${team2Spent}.`;
-                
                 showStatus(winnerMessage, "info", 10000);
             }
 
-            /**
-             * Displays a status message to the user
-             * @param {string} message - The message to display
-             * @param {string} type - 'success', 'error', 'info', or 'normal'
-             * @param {number} duration - How long to display the message in ms
-             */
+            function startTimer() {
+                stopTimer(); 
+                state.timeLeft = auctionTime;
+                timerEl.textContent = state.timeLeft;
+                timerEl.classList.remove('text-red-500');
+                timerEl.classList.add('text-white');
+
+                state.timerId = setInterval(() => {
+                    state.timeLeft--;
+                    timerEl.textContent = state.timeLeft;
+                    if (state.timeLeft <= 10) {
+                        timerEl.classList.remove('text-white');
+                        timerEl.classList.add('text-red-500');
+                    }
+                    if (state.timeLeft <= 0) {
+                        if (state.highestBidder) {
+                            sellPlayer();
+                        } else {
+                            skipPlayer(true);
+                        }
+                    }
+                }, 1000);
+            }
+
+            function stopTimer() {
+                clearInterval(state.timerId);
+                state.timerId = null;
+            }
+
             function showStatus(message, type = 'normal', duration = 3000) {
                 statusMessageEl.textContent = message;
-                statusMessageEl.className = 'status-message text-center text-lg font-medium mb-8 h-8'; // Reset classes
+                statusMessageEl.className = 'status-message text-center text-lg font-medium mb-8 h-8';
                 switch (type) {
-                    case 'success':
-                        statusMessageEl.classList.add('text-green-400');
-                        break;
-                    case 'error':
-                        statusMessageEl.classList.add('text-red-400');
-                        break;
-                    case 'info':
-                         statusMessageEl.classList.add('text-blue-400');
-                        break;
-                    default:
-                        statusMessageEl.classList.add('text-gray-300');
+                    case 'success': statusMessageEl.classList.add('text-green-400'); break;
+                    case 'error': statusMessageEl.classList.add('text-red-400'); break;
+                    case 'info': statusMessageEl.classList.add('text-blue-400'); break;
+                    default: statusMessageEl.classList.add('text-gray-300');
                 }
                 setTimeout(() => {
                     if (statusMessageEl.textContent === message) {
@@ -381,10 +393,10 @@
                 }, duration);
             }
 
-
             // --- EVENT LISTENERS ---
             nextPlayerBtn.addEventListener('click', selectNextPlayer);
             sellPlayerBtn.addEventListener('click', sellPlayer);
+            skipPlayerBtn.addEventListener('click', () => skipPlayer(false));
             resetBtn.addEventListener('click', () => {
                 if (confirm("Are you sure you want to reset the entire auction?")) {
                     initializeState();
