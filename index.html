@@ -88,8 +88,9 @@
             <!-- Top Row: Auctioneer and Controls -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="md:col-span-1 p-4 rounded-lg team-card flex flex-col items-center justify-center">
+                    <img id="refereeImage" src="https://placehold.co/100x100/EFEFEF/333?text=Referee" alt="Referee" class="w-20 h-20 rounded-full mb-2 object-cover border-2 border-pink-400">
                     <h3 class="text-xl font-semibold text-gray-300">Auctioneer & Referee</h3>
-                    <p class="text-3xl font-bold text-pink-400 mt-1">🧑‍⚖️ Snehal</p>
+                    <p class="text-2xl font-bold text-pink-400 mt-1">🧑‍⚖️ Snehal</p>
                 </div>
                 <div class="md:col-span-2 p-4 rounded-lg team-card flex flex-col sm:flex-row items-center justify-around gap-4">
                     <button id="nextPlayerBtn" class="btn w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg">
@@ -135,7 +136,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <!-- Team 1 -->
                 <div id="team1" class="team-card p-6 rounded-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-cyan-400">Team 1: Akash Yadav</h2>
+                    <div class="flex items-center gap-4 mb-4">
+                        <img id="captain1Image" src="https://placehold.co/100x100/EFEFEF/333?text=C1" alt="Captain 1" class="w-16 h-16 rounded-full object-cover border-2 border-cyan-400">
+                        <h2 class="text-2xl font-bold text-cyan-400">Team 1: Akash Yadav</h2>
+                    </div>
                     <div class="mb-4">
                         <p class="font-semibold">Budget: <span id="team1Budget" class="text-yellow-400">5000</span></p>
                     </div>
@@ -153,7 +157,10 @@
 
                 <!-- Team 2 -->
                 <div id="team2" class="team-card p-6 rounded-lg">
-                    <h2 class="text-2xl font-bold mb-4 text-orange-400">Team 2: Sushil Kumar Jaiswal</h2>
+                    <div class="flex items-center gap-4 mb-4">
+                        <img id="captain2Image" src="https://placehold.co/100x100/EFEFEF/333?text=C2" alt="Captain 2" class="w-16 h-16 rounded-full object-cover border-2 border-orange-400">
+                        <h2 class="text-2xl font-bold text-orange-400">Team 2: Sushil Kumar Jaiswal</h2>
+                    </div>
                     <div class="mb-4">
                         <p class="font-semibold">Budget: <span id="team2Budget" class="text-yellow-400">5000</span></p>
                     </div>
@@ -176,17 +183,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 1 Pool</h3>
-                        <div id="round1Players" class="player-pool-card p-4 rounded-lg grid grid-cols-3 gap-2">
+                        <div id="round1Players" class="player-pool-card p-4 rounded-lg grid grid-cols-2 sm:grid-cols-3 gap-4">
                         </div>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 2 Pool</h3>
-                        <div id="round2Players" class="player-pool-card p-4 rounded-lg grid grid-cols-3 gap-2">
+                        <div id="round2Players" class="player-pool-card p-4 rounded-lg grid grid-cols-2 sm:grid-cols-3 gap-4">
                         </div>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-center mb-2 text-gray-400">Round 3 Pool</h3>
-                        <div id="round3Players" class="player-pool-card p-4 rounded-lg grid grid-cols-3 gap-2">
+                        <div id="round3Players" class="player-pool-card p-4 rounded-lg grid grid-cols-2 sm:grid-cols-3 gap-4">
                         </div>
                     </div>
                 </div>
@@ -199,13 +206,13 @@
             // --- STATE MANAGEMENT ---
             const initialPlayers = [
                 { name: "Sunil Kumar", image: "https://placehold.co/100x100/EFEFEF/333?text=SK" },
-                { name: "Indra M. Tripathi", image: "https://github.com/sunilkumardhayal/HWM_Volleyball/blob/main/imt2.jpg" },
+                { name: "Indra M. Tripathi", image: "https://placehold.co/100x100/EFEFEF/333?text=IMT" },
                 { name: "Kapil", image: "https://placehold.co/100x100/EFEFEF/333?text=K" },
                 { name: "Bhanu", image: "https://placehold.co/100x100/EFEFEF/333?text=B" },
-                { name: "Sumit", image: "https://github.com/sunilkumardhayal/HWM_Volleyball/blob/main/sum.jpg" },
-                { name: "Rajesh", image: "https://github.com/sunilkumardhayal/HWM_Volleyball/blob/main/jitu.rj" },
+                { name: "Sumit", image: "https://placehold.co/100x100/EFEFEF/333?text=S" },
+                { name: "Rajesh", image: "https://placehold.co/100x100/EFEFEF/333?text=R" },
                 { name: "Pradeep", image: "https://placehold.co/100x100/EFEFEF/333?text=P" },
-                { name: "Jitendra", image: "https://github.com/sunilkumardhayal/HWM_Volleyball/blob/main/jitu.jpg" },
+                { name: "Jitendra", image: "https://placehold.co/100x100/EFEFEF/333?text=J" },
                 { name: "Indrajeet", image: "https://placehold.co/100x100/EFEFEF/333?text=I" }
             ];
             const initialBudget = 5000;
@@ -280,7 +287,7 @@
                         const playerCard = document.createElement('div');
                         playerCard.className = 'player-card p-2 rounded-lg text-center text-sm flex flex-col items-center';
                         playerCard.innerHTML = `
-                            <img src="${player.image}" alt="${player.name}" class="w-12 h-12 rounded-full mb-1 object-cover border-2 border-gray-600">
+                            <img src="${player.image}" alt="${player.name}" class="w-16 h-16 rounded-full mb-1 object-cover border-2 border-gray-600">
                             <span class="font-semibold text-xs">${player.name}</span>`;
                         roundPools[round].appendChild(playerCard);
                     });
