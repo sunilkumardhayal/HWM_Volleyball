@@ -5,18 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HWM Lab Volleyball Auction</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #111827; /* Dark background */
             color: #f3f4f6;
+            overflow-x: hidden;
         }
         .team-card, .player-card, .auction-card, .player-pool-card {
             background-color: #1f2937; /* Slightly lighter card background */
             border: 1px solid #374151;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.3s ease-in-out;
         }
         .team-card:hover, .player-card:hover {
             transform: translateY(-5px);
@@ -73,6 +75,33 @@
             font-weight: bold;
             font-family: 'Inter', sans-serif;
         }
+
+        /* Highest Bidder Glow Effect */
+        .highest-bidder-glow {
+            border-color: #f59e0b;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Confetti Styles */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotateZ(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(100vh) rotateZ(720deg);
+            }
+        }
     </style>
 </head>
 <body class="p-4 sm:p-6 md:p-8">
@@ -90,7 +119,7 @@
                 <div class="md:col-span-1 p-4 rounded-lg team-card flex flex-col items-center justify-center">
                     <img id="refereeImage" src="https://placehold.co/100x100/EFEFEF/333?text=Referee" alt="Referee" class="w-20 h-20 rounded-full mb-2 object-cover border-2 border-pink-400">
                     <h3 class="text-xl font-semibold text-gray-300">Auctioneer & Referee</h3>
-                    <p class="text-2xl font-bold text-pink-400 mt-1">�‍⚖️ Snehal</p>
+                    <p class="text-2xl font-bold text-pink-400 mt-1">🧑‍⚖️ Snehal</p>
                 </div>
                 <div class="md:col-span-2 p-4 rounded-lg team-card flex flex-col sm:flex-row items-center justify-around gap-4">
                     <button id="nextPlayerBtn" class="btn w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg">
@@ -119,12 +148,20 @@
                     <span id="timer-text" class="timer-text">25</span>
                 </div>
                 <div class="text-4xl font-bold mb-4" id="currentBid">Base Price: 100</div>
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <div id="auction-controls" class="flex flex-col sm:flex-row justify-center items-center gap-4">
                     <button id="sellPlayerBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
                         SOLD!
                     </button>
                     <button id="skipPlayerBtn" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
                         Skip Player
+                    </button>
+                </div>
+                 <div id="referee-controls" class="hidden flex-col sm:flex-row justify-center items-center gap-4">
+                    <button id="confirmSaleBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
+                        Confirm Sale
+                    </button>
+                    <button id="restartTimerBtn" class="btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg">
+                        Restart Timer
                     </button>
                 </div>
             </div>
@@ -228,6 +265,8 @@
                 2: document.getElementById('round2Players'),
                 3: document.getElementById('round3Players')
             };
+            const team1El = document.getElementById('team1');
+            const team2El = document.getElementById('team2');
             const team1BudgetEl = document.getElementById('team1Budget');
             const team2BudgetEl = document.getElementById('team2Budget');
             const team1PlayersEl = document.getElementById('team1Players');
@@ -244,7 +283,25 @@
             const timerProgress = document.getElementById('timer-progress');
             const timerText = document.getElementById('timer-text');
             const currentRoundDisplay = document.getElementById('currentRoundDisplay');
-            const CIRCLE_LENGTH = 100; // Corresponds to stroke-dasharray
+            const auctionControls = document.getElementById('auction-controls');
+            const refereeControls = document.getElementById('referee-controls');
+            const confirmSaleBtn = document.getElementById('confirmSaleBtn');
+            const restartTimerBtn = document.getElementById('restartTimerBtn');
+            const CIRCLE_LENGTH = 100;
+
+            // --- SOUND EFFECTS ---
+            let soundsReady = false;
+            const bidSound = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+            const soldSound = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.5, release: 1 } }).toDestination();
+            const tickSound = new Tone.MembraneSynth().toDestination();
+
+            document.body.addEventListener('click', async () => {
+                if (!soundsReady) {
+                    await Tone.start();
+                    soundsReady = true;
+                }
+            }, { once: true });
+
 
             // --- CORE FUNCTIONS ---
 
@@ -252,7 +309,7 @@
                 stopTimer();
                 state = {
                     rounds: {
-                        1: JSON.parse(JSON.stringify(initialPlayers)), // Deep copy
+                        1: JSON.parse(JSON.stringify(initialPlayers)),
                         2: [],
                         3: []
                     },
@@ -326,6 +383,15 @@
                     </li>
                 `).join('');
                 team2PlayersEl.innerHTML = captain2HTML + team2PlayersHTML;
+
+                // Update glow effect
+                team1El.classList.remove('highest-bidder-glow');
+                team2El.classList.remove('highest-bidder-glow');
+                if (state.highestBidder === 1) {
+                    team1El.classList.add('highest-bidder-glow');
+                } else if (state.highestBidder === 2) {
+                    team2El.classList.add('highest-bidder-glow');
+                }
             }
 
             function renderAuctionArena() {
@@ -371,6 +437,7 @@
             }
 
             function placeBid(teamId, amount) {
+                if (soundsReady) bidSound.triggerAttackRelease("C5", "8n");
                 const team = state.teams[teamId];
                 
                 const newBid = state.currentBid === 0
@@ -393,10 +460,9 @@
 
                 showStatus(`Team ${team.name} bids ${state.currentBid}!`, "normal");
                 
-                renderAuctionArena();
-                updateBidButtons();
+                renderAll();
                 sellPlayerBtn.disabled = false;
-                skipPlayerBtn.disabled = true; // Disable skip after first bid
+                skipPlayerBtn.disabled = true;
                 startTimer();
             }
             
@@ -429,6 +495,8 @@
                     showStatus("No bids were placed!", "error");
                     return;
                 }
+                if (soundsReady) soldSound.triggerAttackRelease("G5", "8n", Tone.now() + 0.2);
+                launchConfetti();
 
                 const winningTeamId = state.highestBidder;
                 const winningTeam = state.teams[winningTeamId];
@@ -458,7 +526,6 @@
                         : `${skippedPlayer.name} was skipped and moves to Round ${state.currentRound + 1}.`;
                     showStatus(message, "info", 5000);
                 } else {
-                    // --- NEW: Auto-assign logic for Round 3 ---
                     const team1PlayerCount = state.teams[1].players.length;
                     const team2PlayerCount = state.teams[2].players.length;
                     let assignedTeamId;
@@ -468,7 +535,6 @@
                     } else if (team2PlayerCount < team1PlayerCount) {
                         assignedTeamId = 2;
                     } else {
-                        // Tie-breaker: team with more money
                         assignedTeamId = state.teams[1].budget >= state.teams[2].budget ? 1 : 2;
                     }
                     
@@ -493,6 +559,9 @@
                 state.highestBidder = null;
                 state.auctionInProgress = false;
                 skipPlayerBtn.disabled = true;
+                auctionControls.classList.remove('hidden');
+                auctionControls.classList.add('flex');
+                refereeControls.classList.add('hidden');
                 renderAll();
             }
             
@@ -518,10 +587,27 @@
                 timerText.textContent = time;
 
                 if (time <= 10) {
+                    if (soundsReady && time > 0) tickSound.triggerAttackRelease("C2", "8n");
                     timerProgress.style.stroke = "#ef4444"; // Red
                 } else {
                     timerProgress.style.stroke = "#4f46e5"; // Indigo
                 }
+            }
+
+            function handleTimerEnd() {
+                stopTimer();
+                showStatus("Time's up! Referee's decision.", "info");
+                auctionControls.classList.add('hidden');
+                refereeControls.classList.remove('hidden');
+                refereeControls.classList.add('flex');
+                
+                if (state.highestBidder) {
+                    confirmSaleBtn.textContent = "Confirm Sale";
+                } else {
+                    confirmSaleBtn.textContent = "Confirm Skip/Assign";
+                }
+                
+                bidBtns.forEach(btn => btn.disabled = true);
             }
 
             function startTimer() {
@@ -533,11 +619,7 @@
                     state.timeLeft--;
                     updateTimerDisplay(state.timeLeft);
                     if (state.timeLeft <= 0) {
-                        if (state.highestBidder) {
-                            sellPlayer();
-                        } else {
-                            skipPlayer(true);
-                        }
+                        handleTimerEnd();
                     }
                 }, 1000);
             }
@@ -573,6 +655,19 @@
                     return false;
                 }
             }
+            
+            function launchConfetti() {
+                const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = `${Math.random() * 100}vw`;
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = `${Math.random() * 2}s`;
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }
+            }
 
             // --- EVENT LISTENERS ---
             nextPlayerBtn.addEventListener('click', selectNextPlayer);
@@ -603,10 +698,29 @@
                 });
             });
 
+            confirmSaleBtn.addEventListener('click', () => {
+                if (checkAuctioneerPasscode()) {
+                    if (state.highestBidder) {
+                        sellPlayer();
+                    } else {
+                        skipPlayer(true);
+                    }
+                }
+            });
+
+            restartTimerBtn.addEventListener('click', () => {
+                if (checkAuctioneerPasscode()) {
+                    auctionControls.classList.remove('hidden');
+                    auctionControls.classList.add('flex');
+                    refereeControls.classList.add('hidden');
+                    updateBidButtons();
+                    startTimer();
+                }
+            });
+
             // --- INITIALIZE THE APP ---
             initializeState();
         });
     </script>
 </body>
 </html>
-�
