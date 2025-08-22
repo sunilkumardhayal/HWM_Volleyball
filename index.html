@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HWM Lab Volleyball Auction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark background */
+            color: #f3f4f6;
+        }
+        .team-card, .player-card, .auction-card {
+            background-color: #1f2937; /* Slightly lighter card background */
+            border: 1px solid #374151;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .team-card:hover, .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn {
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .player-name-tag {
+            background: linear-gradient(to right, #4f46e5, #ec4899);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-message {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header Section -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">🏐 HWM Lab Volleyball Auction 🏐</h1>
+            <p class="text-lg text-gray-400 mt-2">Live from AB6/329, HWM Lab</p>
+        </header>
+
+        <!-- Main Auction Interface -->
+        <main id="app">
+            <!-- Top Row: Auctioneer and Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="md:col-span-1 p-4 rounded-lg team-card flex flex-col items-center justify-center">
+                    <h3 class="text-xl font-semibold text-gray-300">Auctioneer & Referee</h3>
+                    <p class="text-3xl font-bold text-pink-400 mt-1">🧑‍⚖️ Snehal</p>
+                </div>
+                <div class="md:col-span-2 p-4 rounded-lg team-card flex flex-col sm:flex-row items-center justify-around gap-4">
+                    <button id="nextPlayerBtn" class="btn w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg">
+                        Start Auction / Next Player
+                    </button>
+                    <button id="resetBtn" class="btn w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg">
+                        Reset Auction
+                    </button>
+                </div>
+            </div>
+
+            <!-- Auction Arena -->
+            <div id="auction-arena" class="auction-card rounded-lg p-6 mb-8 text-center hidden">
+                <h2 class="text-2xl font-bold mb-4 text-yellow-300">🔥 ON THE BLOCK 🔥</h2>
+                <div id="currentPlayer" class="mb-4">
+                    <!-- Current player details will be injected here -->
+                </div>
+                <div class="text-4xl font-bold mb-4" id="currentBid">Base Price: 100</div>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button id="sellPlayerBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg" disabled>
+                        SOLD!
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Status Message -->
+            <div id="statusMessage" class="text-center text-lg font-medium text-green-400 mb-8 h-8"></div>
+
+            <!-- Teams Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Team 1 -->
+                <div id="team1" class="team-card p-6 rounded-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-cyan-400">Team 1: Akash Yadav</h2>
+                    <div class="mb-4">
+                        <p class="font-semibold">Budget: <span id="team1Budget" class="text-yellow-400">1000</span></p>
+                    </div>
+                    <div class="mb-4">
+                        <button data-team="1" class="btn bid-btn w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded" disabled>Bid +100</button>
+                    </div>
+                    <h3 class="font-semibold mb-2">Players:</h3>
+                    <ul id="team1Players" class="list-disc list-inside pl-2 space-y-1">
+                        <!-- Players will be added here -->
+                    </ul>
+                </div>
+
+                <!-- Team 2 -->
+                <div id="team2" class="team-card p-6 rounded-lg">
+                    <h2 class="text-2xl font-bold mb-4 text-orange-400">Team 2: Sushil Kumar Jaiswal</h2>
+                    <div class="mb-4">
+                        <p class="font-semibold">Budget: <span id="team2Budget" class="text-yellow-400">1000</span></p>
+                    </div>
+                    <div class="mb-4">
+                        <button data-team="2" class="btn bid-btn w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded" disabled>Bid +100</button>
+                    </div>
+                    <h3 class="font-semibold mb-2">Players:</h3>
+                    <ul id="team2Players" class="list-disc list-inside pl-2 space-y-1">
+                        <!-- Players will be added here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Available Players Section -->
+            <div>
+                <h2 class="text-2xl font-bold text-center mb-4">Available Players</h2>
+                <div id="availablePlayers" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- Player cards will be generated here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            const initialPlayers = [
+                "Sunil Kumar", "Indra Mani Tripathi", "Kapil", "Bhanu", 
+                "Sumit", "Rajesh", "Pradeep", "Jitendra", "Indrajeet"
+            ];
+            const initialBudget = 1000;
+            const bidIncrement = 100;
+            const basePrice = 100;
+
+            let state = {};
+
+            // --- DOM ELEMENTS ---
+            const availablePlayersContainer = document.getElementById('availablePlayers');
+            const team1BudgetEl = document.getElementById('team1Budget');
+            const team2BudgetEl = document.getElementById('team2Budget');
+            const team1PlayersEl = document.getElementById('team1Players');
+            const team2PlayersEl = document.getElementById('team2Players');
+            const currentPlayerContainer = document.getElementById('currentPlayer');
+            const currentBidEl = document.getElementById('currentBid');
+            const nextPlayerBtn = document.getElementById('nextPlayerBtn');
+            const sellPlayerBtn = document.getElementById('sellPlayerBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const bidBtns = document.querySelectorAll('.bid-btn');
+            const statusMessageEl = document.getElementById('statusMessage');
+            const auctionArena = document.getElementById('auction-arena');
+
+            // --- CORE FUNCTIONS ---
+
+            /**
+             * Initializes or resets the auction state
+             */
+            function initializeState() {
+                state = {
+                    availablePlayers: [...initialPlayers],
+                    teams: {
+                        1: { name: "Akash Yadav", budget: initialBudget, players: [] },
+                        2: { name: "Sushil Kumar Jaiswal", budget: initialBudget, players: [] }
+                    },
+                    currentPlayer: null,
+                    currentBid: 0,
+                    highestBidder: null,
+                    auctionInProgress: false,
+                    biddingTurn: Math.ceil(Math.random() * 2) // Randomly start with team 1 or 2
+                };
+                renderAll();
+            }
+
+            /**
+             * Renders all components of the UI based on the current state
+             */
+            function renderAll() {
+                renderAvailablePlayers();
+                renderTeams();
+                renderAuctionArena();
+                updateBidButtons();
+            }
+
+            /**
+             * Renders the list of available players
+             */
+            function renderAvailablePlayers() {
+                availablePlayersContainer.innerHTML = '';
+                state.availablePlayers.forEach(player => {
+                    const playerCard = document.createElement('div');
+                    playerCard.className = 'player-card p-4 rounded-lg text-center';
+                    playerCard.innerHTML = `<span class="font-semibold">${player}</span>`;
+                    availablePlayersContainer.appendChild(playerCard);
+                });
+            }
+
+            /**
+             * Renders the team information (budget and player list)
+             */
+            function renderTeams() {
+                // Team 1
+                team1BudgetEl.textContent = state.teams[1].budget;
+                team1PlayersEl.innerHTML = state.teams[1].players.map(p => `<li>${p.name} <span class="text-gray-400">(${p.price})</span></li>`).join('');
+                
+                // Team 2
+                team2BudgetEl.textContent = state.teams[2].budget;
+                team2PlayersEl.innerHTML = state.teams[2].players.map(p => `<li>${p.name} <span class="text-gray-400">(${p.price})</span></li>`).join('');
+            }
+
+            /**
+             * Renders the central auction block for the current player
+             */
+            function renderAuctionArena() {
+                if (state.currentPlayer) {
+                    auctionArena.classList.remove('hidden');
+                    currentPlayerContainer.innerHTML = `<p class="text-4xl font-extrabold text-white">${state.currentPlayer}</p>`;
+                    currentBidEl.textContent = state.currentBid === 0 ? `Base Price: ${basePrice}` : `Current Bid: ${state.currentBid}`;
+                } else {
+                    auctionArena.classList.add('hidden');
+                }
+            }
+
+            /**
+             * Selects the next player for auction
+             */
+            function selectNextPlayer() {
+                if (state.availablePlayers.length === 0) {
+                    showStatus("All players have been auctioned!", "info", 5000);
+                    endAuction();
+                    return;
+                }
+
+                // Move player from available to current
+                state.currentPlayer = state.availablePlayers.shift();
+                state.currentBid = 0; // Reset bid for new player
+                state.highestBidder = null;
+                state.auctionInProgress = true;
+                
+                showStatus(`${state.currentPlayer} is now up for auction!`, "normal");
+                
+                renderAll();
+                sellPlayerBtn.disabled = true;
+            }
+
+            /**
+             * Handles the bidding logic
+             * @param {string} teamId - The ID of the team that is bidding ('1' or '2')
+             */
+            function placeBid(teamId) {
+                const team = state.teams[teamId];
+                const newBid = (state.currentBid === 0 ? basePrice : state.currentBid) + (state.currentBid > 0 ? bidIncrement : 0);
+
+                if (team.budget < newBid) {
+                    showStatus(`${team.name} does not have enough budget!`, "error");
+                    return;
+                }
+                
+                if (state.biddingTurn != teamId && state.highestBidder !== null) {
+                    showStatus(`It's not your turn to bid!`, "error");
+                    return;
+                }
+
+                state.currentBid = newBid;
+                state.highestBidder = teamId;
+                state.biddingTurn = teamId == 1 ? 2 : 1; // Switch turns
+
+                showStatus(`Team ${team.name} bids ${state.currentBid}!`, "normal");
+                
+                renderAuctionArena();
+                updateBidButtons();
+                sellPlayerBtn.disabled = false;
+            }
+            
+            /**
+             * Updates the state and appearance of bidding buttons
+             */
+            function updateBidButtons() {
+                if (!state.auctionInProgress) {
+                    bidBtns.forEach(btn => btn.disabled = true);
+                    return;
+                }
+
+                bidBtns.forEach(btn => {
+                    const teamId = btn.dataset.team;
+                    const team = state.teams[teamId];
+                    const nextBid = (state.currentBid === 0 ? basePrice : state.currentBid) + (state.currentBid > 0 ? bidIncrement : 0);
+                    
+                    // Disable if it's not their turn (and a bid has been placed) or if they can't afford it
+                    if ((state.biddingTurn != teamId && state.highestBidder !== null) || team.budget < nextBid) {
+                        btn.disabled = true;
+                    } else {
+                        btn.disabled = false;
+                    }
+                });
+            }
+
+            /**
+             * Sells the current player to the highest bidder
+             */
+            function sellPlayer() {
+                if (!state.highestBidder) {
+                    showStatus("No bids were placed!", "error");
+                    return;
+                }
+
+                const winningTeamId = state.highestBidder;
+                const winningTeam = state.teams[winningTeamId];
+                const finalPrice = state.currentBid;
+
+                // Update winning team's state
+                winningTeam.budget -= finalPrice;
+                winningTeam.players.push({ name: state.currentPlayer, price: finalPrice });
+
+                showStatus(`${state.currentPlayer} sold to Team ${winningTeam.name} for ${finalPrice}!`, "success", 5000);
+                
+                // Reset auction state for next player
+                state.currentPlayer = null;
+                state.currentBid = 0;
+                state.highestBidder = null;
+                state.auctionInProgress = false;
+                
+                renderAll();
+            }
+            
+            /**
+             * Ends the auction when all players are sold
+             */
+            function endAuction() {
+                state.auctionInProgress = false;
+                updateBidButtons();
+                nextPlayerBtn.disabled = true;
+                sellPlayerBtn.disabled = true;
+                
+                const team1Spent = initialBudget - state.teams[1].budget;
+                const team2Spent = initialBudget - state.teams[2].budget;
+
+                let winnerMessage = `Auction Over! Team 1 spent ${team1Spent}. Team 2 spent ${team2Spent}.`;
+                
+                showStatus(winnerMessage, "info", 10000);
+            }
+
+            /**
+             * Displays a status message to the user
+             * @param {string} message - The message to display
+             * @param {string} type - 'success', 'error', 'info', or 'normal'
+             * @param {number} duration - How long to display the message in ms
+             */
+            function showStatus(message, type = 'normal', duration = 3000) {
+                statusMessageEl.textContent = message;
+                statusMessageEl.className = 'status-message text-center text-lg font-medium mb-8 h-8'; // Reset classes
+                switch (type) {
+                    case 'success':
+                        statusMessageEl.classList.add('text-green-400');
+                        break;
+                    case 'error':
+                        statusMessageEl.classList.add('text-red-400');
+                        break;
+                    case 'info':
+                         statusMessageEl.classList.add('text-blue-400');
+                        break;
+                    default:
+                        statusMessageEl.classList.add('text-gray-300');
+                }
+                setTimeout(() => {
+                    if (statusMessageEl.textContent === message) {
+                       statusMessageEl.textContent = '';
+                    }
+                }, duration);
+            }
+
+
+            // --- EVENT LISTENERS ---
+            nextPlayerBtn.addEventListener('click', selectNextPlayer);
+            sellPlayerBtn.addEventListener('click', sellPlayer);
+            resetBtn.addEventListener('click', () => {
+                if (confirm("Are you sure you want to reset the entire auction?")) {
+                    initializeState();
+                    nextPlayerBtn.disabled = false;
+                    showStatus("Auction has been reset.", "info");
+                }
+            });
+
+            bidBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    placeBid(e.target.dataset.team);
+                });
+            });
+
+            // --- INITIALIZE THE APP ---
+            initializeState();
+        });
+    </script>
+</body>
+</html>
